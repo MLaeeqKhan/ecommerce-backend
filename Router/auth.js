@@ -1,16 +1,14 @@
 //auth.js file
 
-var nodemailer = require('nodemailer');
+var nodemailer = require("nodemailer");
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const User = require("../Models/UserSchema");
 const generateToken = require("../Middleware/generateToken");
 router.use(express.json());
 const app = express();
-
-
 
 router.post("/signup", async (req, res) => {
   const { userName, email, pass, cPass } = req.body;
@@ -56,11 +54,10 @@ router.post("/signin", async (req, res) => {
         _id: userExist._id,
         userName: userExist.userName,
         email: userExist.email,
-        token: generateToken(userExist._id)
+        token: generateToken(userExist._id),
       });
-
     } else {
-      return res.status(404).send("Please Enter Valid Credentials!")
+      return res.status(404).send("Please Enter Valid Credentials!");
     }
   } catch (error) {
     console.log(error);
@@ -68,7 +65,7 @@ router.post("/signin", async (req, res) => {
   }
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -77,32 +74,33 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(404).send("Please enter a valid email address.");
     }
 
-    const token = jwt.sign({ userId: isExist._id }, process.env.SECRET_KEY, { expiresIn: "5m" });
+    const token = jwt.sign({ userId: isExist._id }, process.env.SECRET_KEY, {
+      expiresIn: "5m",
+    });
     const resetLink = `http://localhost:5000/reset-password/${isExist._id}/${token}`;
 
     var transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: process.env.PASS
-      }
+        pass: process.env.PASS,
+      },
     });
 
     var mailOptions = {
-      from: 'lk7715714@gmail.com',
+      from: "lk7715714@gmail.com",
       to: isExist.email,
-      subject: 'Reset Password Link',
-      text: resetLink
+      subject: "Reset Password Link",
+      text: resetLink,
     };
 
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.log(error);
-        return res.status(405).send("Error In Sending Reset Password Link!")
-
+        return res.status(405).send("Error In Sending Reset Password Link!");
       } else {
-        console.log('Email sent: ' + info.response);
-        res.status(200).send("Password Reset Link Send Successfully!")
+        console.log("Email sent: " + info.response);
+        res.status(200).send("Password Reset Link Send Successfully!");
       }
     });
   } catch (error) {
@@ -111,15 +109,13 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-
-router.get('/reset-password/:id/:token', async (req, res) => {
+router.get("/reset-password/:id/:token", async (req, res) => {
   const { id, token } = req.params;
   console.log("req.params:", req.params);
   try {
     const isExist = await User.findById(id);
     if (!isExist) {
       return res.status(404).send("User Not Exists!");
-
     }
     const verify = jwt.verify(token, process.env.SECRET_KEY);
     if (verify) {
@@ -127,16 +123,14 @@ router.get('/reset-password/:id/:token', async (req, res) => {
       // res.status(200).send("Your Password Reset Successfully!");
     } else {
       res.status(404).send("Your Password Not Reset!");
-
     }
   } catch (error) {
     console.log(error);
     return res.status(500).send(" Your Reset Password Link Expired!");
   }
+});
 
-})
-
-router.post('/reset-password/:id/:token', async (req, res) => {
+router.post("/reset-password/:id/:token", async (req, res) => {
   const { id, token } = req.params;
   console.log("req.params: ", req.params);
   const { password, confirmPassword } = req.body;
@@ -155,29 +149,24 @@ router.post('/reset-password/:id/:token', async (req, res) => {
     if (verify) {
       const salt = await bcrypt.genSalt(10);
       const newPassword = await bcrypt.hash(password, salt);
-      await User.updateOne({
-        _id: id,
-      },
+      await User.updateOne(
+        {
+          _id: id,
+        },
         {
           $set: {
             pass: newPassword,
           },
         }
-      )
+      );
       res.status(200).send("Your Password Updated Successfully!");
-
     } else {
       res.status(404).send("Your Reset Password Link Expired!");
-
     }
   } catch (error) {
     console.log(error);
     return res.status(500).send(" Your Reset Password Link Expired!");
   }
-
-})
-
-
+});
 
 module.exports = router;
-
