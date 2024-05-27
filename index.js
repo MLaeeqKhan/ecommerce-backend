@@ -11,11 +11,6 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 app.use(cors());
-app.use(
-  cors({
-    origin: "https://ecommerce-backend-sable-nine.vercel.app",
-  })
-);
 // app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
